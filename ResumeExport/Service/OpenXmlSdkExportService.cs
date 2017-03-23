@@ -8,6 +8,7 @@ using NotesFor.HtmlToOpenXml;
 using System.Linq;
 using System.Text;
 using System.Web;
+using System.Globalization;
 
 namespace ResumeExport.Service
 {
@@ -87,19 +88,80 @@ namespace ResumeExport.Service
                         }
                         html.Append("</table>");
                     }
-                    
+
                     //將 HTML 內容轉換成 XML，並添加至文件內
                     HtmlConverter converter = new HtmlConverter(mainPart);
                     converter.ParseHtml(html.ToString());
-                    
+
+
+
+                    // Create an empty table.
+                    Table table = new Table();
+                    // Create a TableProperties object and specify its border information.
+                    TableProperties tblProp = new TableProperties(
+                        new TableBorders(
+                            new TopBorder(){ Val = new EnumValue<BorderValues>(BorderValues.Sawtooth), Size = 1 },
+                            new BottomBorder(){ Val = new EnumValue<BorderValues>(BorderValues.Sawtooth), Size = 1 },
+                            new LeftBorder(){ Val = new EnumValue<BorderValues>(BorderValues.Sawtooth), Size = 1 },
+                            new RightBorder(){ Val = new EnumValue<BorderValues>(BorderValues.Sawtooth), Size = 1 },
+                            new InsideHorizontalBorder(){ Val = new EnumValue<BorderValues>(BorderValues.Sawtooth), Size = 1 },
+                            new InsideVerticalBorder(){ Val = new EnumValue<BorderValues>(BorderValues.Sawtooth), Size = 1 }
+                            ),
+                        new TableCellProperties(
+                            new TableCellVerticalAlignment() { Val = TableVerticalAlignmentValues.Center }                            
+                            ),
+                        new Paragraph(
+                            new ParagraphProperties(new Justification() { Val = JustificationValues.Center })
+                        ));
+
+                    TableStyle tableStyle = new TableStyle { Val = "LightShadingAccent1" };
+                    tblProp.TableStyle = tableStyle;
+                    //props.Append(tableStyle);
+                    table.AppendChild(tblProp);
+
+                    // Append the TableProperties object to the empty table.
+                    //table.AppendChild<TableProperties>(tblProp);
+
+                    // Create a row and a cell.
+                    TableRow tableRow = new TableRow();
+                    TableCell tableCell1 = new TableCell();
+
+                    // Specify the width property of the table cell.
+                    tableCell1.Append(new TableCellProperties(
+                        new TableCellWidth() { Type = TableWidthUnitValues.Dxa, Width = "2400" }));
+
+                    // Write some text in the cell.
+                    tableCell1.Append(new Paragraph(new Run(new Text("Some cell text."))));
+
+                    // Append the cell to the row.
+                    tableRow.Append(tableCell1);
+
+                    // Create a second table cell by copying the OuterXml value of the first table cell.
+                    TableCell tableCell2 = new TableCell(tableCell1.OuterXml);
+
+                    // Append the cell to the row.
+                    tableRow.Append(tableCell2);
+
+                    // Append the table row to the table.
+                    table.Append(tableRow);
+
+                    // Append the table to the document.
+                    mainPart.Document.Body.Append(table);
+
+
                     #endregion
 
                     #region 套用樣式
-                    
+
                     foreach (var p in mainPart.Document.Descendants<Paragraph>())
                     {
                         ApplyStyleToParagraph(doc, "BasicParagraphStyle", "Basic Paragraph Style", p);
                     }
+                    
+                    //foreach (var t in mainPart.Document.Descendants<Table>())
+                    //{
+                    //    t.Append(tblProp);                        
+                    //}
 
                     #endregion
                 }
