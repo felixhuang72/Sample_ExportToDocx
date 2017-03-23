@@ -10,7 +10,7 @@ namespace ResumeExport.Controllers
             return View();
         }
 
-        public ActionResult ExportByHtml()
+        public ActionResult SpireDoc_ExportByHtml()
         {
             bool result;
             string msg;
@@ -32,7 +32,7 @@ namespace ResumeExport.Controllers
         }
 
 
-        public ActionResult ExportResumeByDocx()
+        public ActionResult SpireDoc_ExportResumeByDocx()
         {
             bool result;
             string msg;
@@ -54,11 +54,11 @@ namespace ResumeExport.Controllers
         }
 
 
-        public ActionResult Docx_Export()
+        public ActionResult OpenXML_ExportByHtml()
         {
             bool result;
             string msg;
-            byte[] objFile = new DocXExportService().Export(out result, out msg);
+            byte[] objFile = new OpenXmlExportService().ExportByHtml(out result, out msg);
 
             if (result)
             {
