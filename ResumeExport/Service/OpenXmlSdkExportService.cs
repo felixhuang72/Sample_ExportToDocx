@@ -1,20 +1,25 @@
-﻿using System;
-using System.IO;
-using DocumentFormat.OpenXml;
+﻿using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
-using ResumeExport.Models;
 using NotesFor.HtmlToOpenXml;
+using ResumeExport.Models;
+using System;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Web;
-using System.Globalization;
 
 namespace ResumeExport.Service
 {
-    //檔案匯出服務 (DocX)
+    //檔案匯出服務 (OpenXML SDK)
     public class OpenXmlExportService
     {
+        /// <summary>
+        /// 完全以 HTML 編輯內容，並將其匯出成檔案
+        /// </summary>
+        /// <param name="result">執行結果</param>
+        /// <param name="msg">回傳: 訊息</param>
+        /// <returns>匯出的 docx 文件資訊流</returns>
         public byte[] ExportByHtml(out bool result, out string msg)
         {
             result = true;
@@ -25,11 +30,13 @@ namespace ResumeExport.Service
             {
                 using (WordprocessingDocument doc = WordprocessingDocument.Create(ms, WordprocessingDocumentType.Document))
                 {
-                    // 建立 MainDocumentPart 類別物件 mainPart，加入主文件部分 
+                    #region 文件宣告與定義
+
+                    //建立 MainDocumentPart 類別物件 mainPart，加入主文件部分 
                     MainDocumentPart mainPart = doc.AddMainDocumentPart();
-                    // 實例化 Document(w) 部分
+                    //實例化 Document(w) 部分
                     mainPart.Document = new Document();
-                    // 建立 Body 類別物件，於加入 Doucment(w) 中加入 Body 內文
+                    //建立 Body 類別物件，於加入 Doucment(w) 中加入 Body 內文
                     Body body = mainPart.Document.AppendChild(
                         new Body(
                             new SectionProperties(new PageMargin()
@@ -40,24 +47,24 @@ namespace ResumeExport.Service
                                 Top = 740
                             })));
 
-
+                    #endregion
+                    
                     #region 產出內容
 
-                    // 建立 Paragraph 類別物件，於 Body 本文中加入段落 Paragraph(p)                    
                     Paragraph paragraph;
                     Run run;
 
+                    //建立「段落 Paragraph」類別物件，於 Body 本文中加入段落 Paragraph(p)                    
                     paragraph = body.AppendChild(new Paragraph());
-                    // 建立 Run 類別物件，於 段落 Paragraph(p) 中加入文字屬性 Run(r) 範圍
+                    //建立 Run 類別物件，於 段落 Paragraph(p) 中加入文字屬性 Run(r) 範圍
                     run = paragraph.AppendChild(new Run());
-                    // 在文字屬性 Run(r) 範圍中加入文字內容
+                    //在文字屬性 Run(r) 範圍中加入文字內容
                     run.AppendChild(new Text("履歷匯出範例"));
                     run.AppendChild(new Break());
                     run.AppendChild(new Text("(使用 HTML 直接匯出)"));
 
 
-                    //建立要產出的 HTML 內容
-                    //建立/取得要匯出的內容
+                    //建立要產出的 HTML 內容                    
                     Resume model = new Resume();
                     StringBuilder html = new StringBuilder();
                     html.Append("Name: " + model.Name + "<br />");
@@ -74,7 +81,9 @@ namespace ResumeExport.Service
                         int i = 1;
                         model.JobHistory = model.JobHistory.OrderBy(x => x.StartDT).ToList();
                         html.Append("<p>簡歷</p>");
-                        html.Append("<table><tr><th>項目</th><th>任職</th><th>職稱</th><th>開始時間</th><th>結束時間</th></tr>");
+
+                        //注意: HTML Table 轉成 OpenXML SDK 的 Table 物件時不會有框線，因此框線須直接於 HTML table Tag 中設定
+                        html.Append("<table width=\"100%\" border=\"1\" cellspacing=\"0\" cellpadding=\"4\"><tr><th>項目</th><th>任職</th><th>職稱</th><th>開始時間</th><th>結束時間</th></tr>");
                         foreach (var h in model.JobHistory)
                         {
                             html.Append("<tr>");
@@ -93,79 +102,87 @@ namespace ResumeExport.Service
                     HtmlConverter converter = new HtmlConverter(mainPart);
                     converter.ParseHtml(html.ToString());
 
+                    //分隔線
+                    paragraph = body.AppendChild(new Paragraph(new Run(new Text("-----------------------------------------------------------------"))));
 
+                    #region 動態建立表格
 
-                    // Create an empty table.
+                    //建立一個新的空白表格
                     Table table = new Table();
-                    // Create a TableProperties object and specify its border information.
+
+                    //建立表格屬性物件 (TableProperties object)，並設定表格邊框及框度
                     TableProperties tblProp = new TableProperties(
                         new TableBorders(
-                            new TopBorder(){ Val = new EnumValue<BorderValues>(BorderValues.Sawtooth), Size = 1 },
-                            new BottomBorder(){ Val = new EnumValue<BorderValues>(BorderValues.Sawtooth), Size = 1 },
-                            new LeftBorder(){ Val = new EnumValue<BorderValues>(BorderValues.Sawtooth), Size = 1 },
-                            new RightBorder(){ Val = new EnumValue<BorderValues>(BorderValues.Sawtooth), Size = 1 },
-                            new InsideHorizontalBorder(){ Val = new EnumValue<BorderValues>(BorderValues.Sawtooth), Size = 1 },
-                            new InsideVerticalBorder(){ Val = new EnumValue<BorderValues>(BorderValues.Sawtooth), Size = 1 }
-                            ),
-                        new TableCellProperties(
-                            new TableCellVerticalAlignment() { Val = TableVerticalAlignmentValues.Center }                            
-                            ),
-                        new Paragraph(
-                            new ParagraphProperties(new Justification() { Val = JustificationValues.Center })
-                        ));
+                            new TopBorder() { Val = new EnumValue<BorderValues>(BorderValues.Sawtooth), Size = 1 },
+                            new BottomBorder() { Val = new EnumValue<BorderValues>(BorderValues.Sawtooth), Size = 1 },
+                            new LeftBorder() { Val = new EnumValue<BorderValues>(BorderValues.Sawtooth), Size = 1 },
+                            new RightBorder() { Val = new EnumValue<BorderValues>(BorderValues.Sawtooth), Size = 1 },
+                            new InsideHorizontalBorder() { Val = new EnumValue<BorderValues>(BorderValues.Sawtooth), Size = 1 },
+                            new InsideVerticalBorder() { Val = new EnumValue<BorderValues>(BorderValues.Sawtooth), Size = 1 }),
+                        new TableWidth() { Width = "5000", Type = TableWidthUnitValues.Pct });
 
+
+                    //將表格屬性物件 (TableProperties) 指定給表格 (table) 物件
                     TableStyle tableStyle = new TableStyle { Val = "LightShadingAccent1" };
                     tblProp.TableStyle = tableStyle;
-                    //props.Append(tableStyle);
-                    table.AppendChild(tblProp);
+                    table.AppendChild(tblProp); //<= 指定
 
-                    // Append the TableProperties object to the empty table.
-                    //table.AppendChild<TableProperties>(tblProp);
+                    //建立表格儲存格屬性
+                    TableCellProperties cellProp = new TableCellProperties(
+                        new TableCellVerticalAlignment() { Val = TableVerticalAlignmentValues.Center },
+                        new TableCellWidth() { Type = TableWidthUnitValues.Auto }
+                        );
 
-                    // Create a row and a cell.
+
+                    //建立表格列 (Row) 及儲存格 (Cell)
                     TableRow tableRow = new TableRow();
                     TableCell tableCell1 = new TableCell();
 
-                    // Specify the width property of the table cell.
-                    tableCell1.Append(new TableCellProperties(
-                        new TableCellWidth() { Type = TableWidthUnitValues.Dxa, Width = "2400" }));
+                    //將儲存格屬性 (TableCellProperties) 指定給新建立的儲存格
+                    tableCell1.Append(cellProp);
 
-                    // Write some text in the cell.
-                    tableCell1.Append(new Paragraph(new Run(new Text("Some cell text."))));
+                    //在儲存格中添加段落，並於段落內加入文字
+                    tableCell1.Append(new Paragraph(new Run(new Text("測試 Some cell text."))));
 
-                    // Append the cell to the row.
+                    //將儲存格添加至表格列中
                     tableRow.Append(tableCell1);
 
-                    // Create a second table cell by copying the OuterXml value of the first table cell.
-                    TableCell tableCell2 = new TableCell(tableCell1.OuterXml);
 
-                    // Append the cell to the row.
+                    //建立第二個儲存格 (直接複製第一個儲存格)，並加入至表格列中
+                    TableCell tableCell2 = new TableCell(tableCell1.OuterXml);
                     tableRow.Append(tableCell2);
 
-                    // Append the table row to the table.
+
+                    //最後將表格列添加到表格物件上
                     table.Append(tableRow);
 
-                    // Append the table to the document.
+                    //將表格附加到文件 Body 上
                     mainPart.Document.Body.Append(table);
 
+                    #endregion
 
                     #endregion
 
                     #region 套用樣式
 
+                    //由於已經定義了段落樣式，因此將文件中所有的段落取出後，一一套用段落樣式
                     foreach (var p in mainPart.Document.Descendants<Paragraph>())
                     {
                         ApplyStyleToParagraph(doc, "BasicParagraphStyle", "Basic Paragraph Style", p);
+                        p.ParagraphProperties.SpacingBetweenLines = new SpacingBetweenLines() { After = "300", LineRule = LineSpacingRuleValues.Auto };
                     }
                     
-                    //foreach (var t in mainPart.Document.Descendants<Table>())
-                    //{
-                    //    t.Append(tblProp);                        
-                    //}
+                    //上一步驟會將一般文章段落樣式套在表格儲存格內的文字段落，因此取出表格內的所有段落，將樣式覆寫
+                    foreach (var t in mainPart.Document.Descendants<Table>())
+                    {
+                        foreach (var cell_p in t.Descendants<Paragraph>())
+                        {
+                            cell_p.ParagraphProperties.SpacingBetweenLines = new SpacingBetweenLines() { After = "0", LineRule = LineSpacingRuleValues.Auto };
+                        }
+                    }
 
                     #endregion
                 }
-
             }
             catch (Exception ex)
             {
@@ -287,8 +304,6 @@ namespace ResumeExport.Service
             StyleRunProperties styleRunProperties1 = new StyleRunProperties();
             Bold bold1 = new Bold();
             Color color1 = new Color() { ThemeColor = ThemeColorValues.Accent2 };
-            SpacingBetweenLines spacing = new SpacingBetweenLines() { After = "50" };
-
             RunFonts font1 = new RunFonts() { EastAsia = "DFKai-SB" /*正黑體: Microsoft JhengHei, 標楷體：DFKai-SB, 細明體：MingLiU, 新細明體：PMingLiU */};
             //Italic italic1 = new Italic();
             //Specify a 12 point size.
@@ -298,7 +313,7 @@ namespace ResumeExport.Service
             styleRunProperties1.Append(font1);
             styleRunProperties1.Append(fontSize1);
             //styleRunProperties1.Append(italic1);
-            styleRunProperties1.Append(spacing);
+
 
             // Add the run properties to the style.
             style.Append(styleRunProperties1);
