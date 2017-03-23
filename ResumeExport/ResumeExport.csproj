@@ -164,7 +164,7 @@
     </Compile>
     <Compile Include="Models\Resume.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Service\DocXExportService.cs" />
+    <Compile Include="Service\OpenXmlSdkExportService.cs" />
     <Compile Include="Service\SpireDocExportService.cs" />
   </ItemGroup>
   <ItemGroup>
