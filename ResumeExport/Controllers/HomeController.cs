@@ -23,15 +23,14 @@ namespace ResumeExport.Controllers
                 ////PDF
                 //return File(objFile, "application/pdf", "MyReseme.pdf");
                 //Word (docx)
-                return File(objFile, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "MyReseme.docx");
+                return File(objFile, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "MyResume.docx");
             }
             else
             {
                 return RedirectToAction("Index");
             }
         }
-
-
+        
         public ActionResult SpireDoc_ExportResumeByDocx()
         {
             bool result;
@@ -45,15 +44,14 @@ namespace ResumeExport.Controllers
                 ////PDF
                 //return File(objFile, "application/pdf", "MyReseme.pdf");
                 ////Word (docx)
-                return File(objFile, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "MyReseme.docx");
+                return File(objFile, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "MyResume.docx");
             }
             else
             {
                 return RedirectToAction("Index");
             }
         }
-
-
+        
         public ActionResult OpenXML_ExportByHtml()
         {
             bool result;
@@ -67,13 +65,39 @@ namespace ResumeExport.Controllers
                 ////PDF
                 //return File(objFile, "application/pdf", "MyReseme.pdf");
                 //Word (docx)
-                return File(objFile, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "MyReseme.docx");
+                return File(objFile, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "MyResume.docx");
             }
             else
             {
                 return RedirectToAction("Index");
             }
         }
+
+        public ActionResult OpenXML_ExportByDocx()
+        {
+            bool result;
+            string msg;
+            byte[] objFile = new OpenXmlExportService().ExportByDocx(out result, out msg);
+
+            if (result)
+            {
+                ////Word (doc)
+                //return File(objFile, "application/msword", "MyReseme.doc");
+                ////PDF
+                //return File(objFile, "application/pdf", "MyReseme.pdf");
+                //Word (docx)
+                return File(objFile, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "MyResume.docx");
+            }
+            else
+            {
+                return RedirectToAction("Index");
+            }
+        }
+
+
+
+
+
 
 
         public ActionResult About()

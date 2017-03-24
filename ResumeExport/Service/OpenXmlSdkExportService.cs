@@ -4,9 +4,11 @@ using DocumentFormat.OpenXml.Wordprocessing;
 using NotesFor.HtmlToOpenXml;
 using ResumeExport.Models;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Web;
 
 namespace ResumeExport.Service
@@ -48,7 +50,7 @@ namespace ResumeExport.Service
                             })));
 
                     #endregion
-                    
+
                     #region 產出內容
 
                     Paragraph paragraph;
@@ -171,7 +173,7 @@ namespace ResumeExport.Service
                         ApplyStyleToParagraph(doc, "BasicParagraphStyle", "Basic Paragraph Style", p);
                         p.ParagraphProperties.SpacingBetweenLines = new SpacingBetweenLines() { After = "300", LineRule = LineSpacingRuleValues.Auto };
                     }
-                    
+
                     //上一步驟會將一般文章段落樣式套在表格儲存格內的文字段落，因此取出表格內的所有段落，將樣式覆寫
                     foreach (var t in mainPart.Document.Descendants<Table>())
                     {
@@ -200,6 +202,374 @@ namespace ResumeExport.Service
                 return null;
             }
         }
+
+
+
+        /// <summary>
+        /// 以既有檔案進行套印，並將其匯出成檔案
+        /// </summary>
+        /// <param name="result">執行結果</param>
+        /// <param name="msg">回傳: 訊息</param>
+        /// <returns>匯出的 docx 文件資訊流</returns>
+        public byte[] ExportByDocx(out bool result, out string msg)
+        {
+            result = true;
+            msg = "";            
+            MemoryStream ms = new MemoryStream();
+
+            try
+            {
+                //使用書籤
+                byte[] templateBytes = System.IO.File.ReadAllBytes(HttpContext.Current.Server.MapPath("~/App_Data/MyResumeSample_Bookmark.docx"));
+                new MemoryStream(templateBytes).CopyTo(ms);
+                using (WordprocessingDocument doc = WordprocessingDocument.Open(ms, true))
+                {
+                    Resume model = new Resume();
+                    SetBookmarkValue(doc, "NAME", model.Name ?? "");
+                    SetBookmarkValue(doc, "GENDER", model.Gender ?? "");
+                    SetBookmarkValue(doc, "EMAIL", model.Email ?? "");
+                    SetBookmarkValue(doc, "ADDRESS", model.Address ?? "");
+                    SetBookmarkValue(doc, "PHONE", model.Phone ?? "");
+                    SetBookmarkValue(doc, "MOBBILE", model.Mobile ?? "");
+                    SetBookmarkValueWithHtmlValue(doc, "DESCRIPTION1", model.Description1 ?? "");
+                    SetBookmarkValueWithHtmlValue(doc, "DESCRIPTION2", model.Description2 ?? "");
+                    
+
+                    #region 動態建立表格
+
+                    //建立一個新的空白表格
+                    Table table = new Table();
+
+                    //建立表格屬性物件 (TableProperties object)，並設定表格邊框及框度
+                    TableProperties tblProp = new TableProperties(
+                        new TableBorders(
+                            new TopBorder() { Val = new EnumValue<BorderValues>(BorderValues.Sawtooth), Size = 1 },
+                            new BottomBorder() { Val = new EnumValue<BorderValues>(BorderValues.Sawtooth), Size = 1 },
+                            new LeftBorder() { Val = new EnumValue<BorderValues>(BorderValues.Sawtooth), Size = 1 },
+                            new RightBorder() { Val = new EnumValue<BorderValues>(BorderValues.Sawtooth), Size = 1 },
+                            new InsideHorizontalBorder() { Val = new EnumValue<BorderValues>(BorderValues.Sawtooth), Size = 1 },
+                            new InsideVerticalBorder() { Val = new EnumValue<BorderValues>(BorderValues.Sawtooth), Size = 1 }),
+                        new TableWidth() { Width = "5000", Type = TableWidthUnitValues.Pct });
+
+
+                    //將表格屬性物件 (TableProperties) 指定給表格 (table) 物件
+                    TableStyle tableStyle = new TableStyle { Val = "LightShadingAccent1" };
+                    tblProp.TableStyle = tableStyle;
+                    table.AppendChild(tblProp); //<= 指定
+
+                    //建立表格儲存格屬性
+                    TableCellProperties cellProp = new TableCellProperties(
+                        new TableCellVerticalAlignment() { Val = TableVerticalAlignmentValues.Center },
+                        new TableCellWidth() { Type = TableWidthUnitValues.Auto }
+                        );
+
+
+                    //建立表格列 (Row) 及儲存格 (Cell)
+                    TableRow tableRow = new TableRow();
+                    TableCell tableCell1 = new TableCell();
+
+                    //將儲存格屬性 (TableCellProperties) 指定給新建立的儲存格
+                    tableCell1.Append(cellProp);
+
+                    //在儲存格中添加段落，並於段落內加入文字
+                    tableCell1.Append(new Paragraph(new Run(new Text("測試 Some cell text."))));
+
+                    //將儲存格添加至表格列中
+                    tableRow.Append(tableCell1);
+
+
+                    //建立第二個儲存格 (直接複製第一個儲存格)，並加入至表格列中
+                    TableCell tableCell2 = new TableCell(tableCell1.OuterXml);
+                    tableRow.Append(tableCell2);
+
+
+                    //最後將表格列添加到表格物件上
+                    table.Append(tableRow);
+
+
+                    //var table = new Table(
+                    //new TableProperties(
+                    //    new TableStyle() { Val = "TableGrid" },
+                    //    new TableWidth() { Width = 0, Type = TableWidthUnitValues.Auto }
+                    //    ),
+                    //    new TableGrid(
+                    //        new GridColumn() { Width = (UInt32Value)1018U },
+                    //        new GridColumn() { Width = (UInt32Value)3544U }),
+                    //new TableRow(
+                    //    new TableCell(
+                    //        new TableCellProperties(
+                    //            new TableCellWidth() { Width = 0, Type = TableWidthUnitValues.Auto }),
+                    //        new Paragraph(
+                    //            new Run(
+                    //                new Text("Category Name"))
+                    //        )),
+                    //    new TableCell(
+                    //        new TableCellProperties(
+                    //            new TableCellWidth() { Width = 4788, Type = TableWidthUnitValues.Dxa }),
+                    //        new Paragraph(
+                    //            new Run(
+                    //                new Text("Value"))
+                    //        ))
+                    //),
+                    //new TableRow(
+                    //    new TableCell(
+                    //        new TableCellProperties(
+                    //            new TableCellWidth() { Width = 0, Type = TableWidthUnitValues.Auto }),
+                    //        new Paragraph(
+                    //            new Run(
+                    //                new Text("C1"))
+                    //        )),
+                    //    new TableCell(
+                    //        new TableCellProperties(
+                    //            new TableCellWidth() { Width = 0, Type = TableWidthUnitValues.Auto }),
+                    //        new Paragraph(
+                    //            new Run(
+                    //                new Text("V1"))
+                    //        ))
+                    //));
+
+                    #endregion
+
+                    SetBookmarkValueWithTable(doc, "TABLE", table);
+                    
+
+                    #region 套用樣式
+
+                    var mainPart = doc.MainDocumentPart;
+                    
+                    //由於已經定義了段落樣式，因此將文件中所有的段落取出後，一一套用段落樣式
+                    foreach (var p in mainPart.Document.Descendants<Paragraph>())
+                    {
+                        ApplyStyleToParagraph(doc, "BasicParagraphStyle", "Basic Paragraph Style", p);
+                        p.ParagraphProperties.SpacingBetweenLines = new SpacingBetweenLines() { After = "300", LineRule = LineSpacingRuleValues.Auto };
+                    }
+                    
+
+                    //上一步驟會將一般文章段落樣式套在表格儲存格內的文字段落，因此取出表格內的所有段落，將樣式覆寫
+                    foreach (var t in mainPart.Document.Descendants<Table>())
+                    {
+                        foreach (var cell_p in t.Descendants<Paragraph>())
+                        {
+                            cell_p.ParagraphProperties.SpacingBetweenLines = new SpacingBetweenLines() { After = "0", LineRule = LineSpacingRuleValues.Auto };
+                        }
+                    }
+
+                    #endregion
+
+                }
+
+
+                //使用文字替換(不建議)
+                //byte[] templateBytes = System.IO.File.ReadAllBytes(HttpContext.Current.Server.MapPath("~/App_Data/MyResumeSample2.docx"));
+                //new MemoryStream(templateBytes).CopyTo(ms);
+                //using (WordprocessingDocument doc = WordprocessingDocument.Open(ms, true))
+                //{
+                //    var body = doc.MainDocumentPart.Document.Body;
+                //    var paras = body.Elements<Paragraph>();
+
+                //    Resume model = new Resume();
+                //    foreach (var para in paras)
+                //    {
+                //        foreach (var run in para.Elements<Run>())
+                //        {
+                //            foreach (var text in run.Elements<Text>())
+                //            {
+                //                if (text.Text.Contains("REPLACE-TO-NAME#"))
+                //                {
+                //                    text.Text = text.Text.Replace("REPLACE-TO-NAME#", model.Name ?? "");
+                //                }
+                //                if (text.Text.Contains("REPLACE-TO-GENDER#"))
+                //                {
+                //                    text.Text = text.Text.Replace("REPLACE-TO-GENDER#", model.Gender ?? "");
+                //                }
+                //                if (text.Text.Contains("REPLACE-TO-EMAIL#"))
+                //                {
+                //                    text.Text = text.Text.Replace("REPLACE-TO-EMAIL#", model.Email ?? "");
+                //                }
+                //                if (text.Text.Contains("REPLACE-TO-ADDRESS#"))
+                //                {
+                //                    text.Text = text.Text.Replace("REPLACE-TO-ADDRESS#", model.Address ?? "");
+                //                }
+                //                if (text.Text.Contains("REPLACE-TO-PHONE#"))
+                //                {
+                //                    text.Text = text.Text.Replace("REPLACE-TO-PHONE#", model.Phone ?? "");
+                //                }
+                //                if (text.Text.Contains("REPLACE-TO-MOBILE#"))
+                //                {
+                //                    text.Text = text.Text.Replace("REPLACE-TO-MOBILE#", model.Mobile ?? "");
+                //                }
+
+                //                if (text.Text.Contains("REPLACE-TO-DESCRIPTION1#"))
+                //                {
+                //                    text.Text = text.Text.Replace("REPLACE-TO-DESCRIPTION1#", "");
+
+                //                    HtmlConverter converter = new HtmlConverter(doc.MainDocumentPart);
+                //                    //HtmlConverter converter = new HtmlConverter(mainPart);
+                //                    converter.ParseHtml(model.Description1);
+                //                }
+
+                //                if (text.Text.Contains("REPLACE-TO-DESCRIPTION2#"))
+                //                {
+                //                    text.Text = text.Text.Replace("REPLACE-TO-DESCRIPTION2#", model.Description2 ?? "");
+                //                }
+
+                //                //將 HTML 內容轉換成 XML，並添加至文件內
+                //                //HtmlConverter converter = new HtmlConverter(mainPart);
+                //                //converter.ParseHtml(model.Description1 ?? "");
+
+                //            }
+                //        }
+                //    }
+                //}
+
+
+            }
+            catch (Exception ex)
+            {
+                result = false;
+                msg = ex.Message;
+            }
+
+            if (result)
+            {
+                return ms.ToArray();
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+
+        /// <summary>
+        /// 設定書籤內容
+        /// </summary>
+        /// <param name="doc">文件</param>
+        /// <param name="BookmarkName">書籤名稱 (有區分大小寫)</param>
+        /// <param name="BookmarkValue">書籤內容</param>
+        /// <param name="DeleteAfterSetvalue">是否在設定完書籤內容後，將書籤移除 (預設: True)</param>
+        private void SetBookmarkValue(WordprocessingDocument doc, string BookmarkName, string BookmarkValue, bool DeleteAfterSetvalue = true)
+        {
+            Body body = doc.MainDocumentPart.Document.GetFirstChild<Body>();
+            var paras = body.Elements<Paragraph>();
+
+            //Iterate through the paragraphs to find the bookmarks inside
+            foreach (var para in paras)
+            {
+                var bookMarkStarts = para.Elements<BookmarkStart>();
+                var bookMarkEnds = para.Elements<BookmarkEnd>();
+
+                foreach (BookmarkStart bookMarkStart in bookMarkStarts)
+                {
+                    if (bookMarkStart.Name == BookmarkName)
+                    {
+                        //Get the id of the bookmark start to find the bookmark end
+                        var id = bookMarkStart.Id.Value;
+                        var bookmarkEnd = bookMarkEnds.Where(i => i.Id.Value == id).First();
+                        var runElement = new Run(new Text(BookmarkValue));
+                        para.InsertAfter(runElement, bookmarkEnd);
+
+                        if (DeleteAfterSetvalue)
+                        {
+                            //移除書籤
+                            bookMarkStart.Remove();
+                        }
+                    }
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// 將包含 HTML 的內容設定至指定的書籤內
+        /// (已知問題: 若 HTML 包含圖片，圖片部分會異常無法顯示，待解決)
+        /// </summary>
+        /// <param name="doc">文件</param>
+        /// <param name="BookmarkName">書籤名稱 (有區分大小寫)</param>
+        /// <param name="Html">HTML內容</param>
+        /// <param name="DeleteAFterSetvalue">是否在設定完書籤內容後，將書籤移除 (預設: True)</param>
+        private void SetBookmarkValueWithHtmlValue(WordprocessingDocument doc, string BookmarkName, string Html, bool DeleteAfterSetvalue = true)
+        {
+            StringBuilder xhtmlBuilder = new StringBuilder();
+            xhtmlBuilder.Append("<HTML>");
+            xhtmlBuilder.Append("<body>");
+            xhtmlBuilder.Append(Html);
+            xhtmlBuilder.Append("</body>");
+            xhtmlBuilder.Append("</HTML >");
+
+            string altChunkId = "chunk_" + BookmarkName.ToLower();
+            AlternativeFormatImportPart chunk = doc.MainDocumentPart.AddAlternativeFormatImportPart(AlternativeFormatImportPartType.Xhtml, altChunkId);
+            using (MemoryStream xhtmlStream = new MemoryStream(Encoding.UTF8.GetBytes(xhtmlBuilder.ToString())))
+            {
+                chunk.FeedData(xhtmlStream);
+
+                AltChunk altChunk = new AltChunk();
+                altChunk.Id = altChunkId;
+
+                var res = from bm in doc.MainDocumentPart.Document.Body.Descendants<BookmarkStart>()
+                          where bm.Name == BookmarkName
+                          select bm;
+                var bookmark = res.SingleOrDefault();
+                var parent = bookmark.Parent;
+                parent.InsertAfterSelf(altChunk);
+
+
+                if (bookmark != null && DeleteAfterSetvalue)
+                {
+                    bookmark.Remove();
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// 將表格物件設定至指定的書籤內
+        /// </summary>
+        /// <param name="doc">文件</param>
+        /// <param name="BookmarkName">書籤名稱 (有區分大小寫)</param>
+        /// <param name="table">表格內容</param>
+        /// <param name="DeleteAfterSetValue">是否在設定完書籤內容後，將書籤移除 (預設: True)</param>
+        /// <remarks>參考: http://stackoverflow.com/questions/1612511/insert-openxmlelement-after-word-bookmark-in-open-xml-sdk</remarks>
+        private void SetBookmarkValueWithTable(WordprocessingDocument doc, string BookmarkName, Table table, bool DeleteAfterSetValue = true)
+        {
+            var mainPart = doc.MainDocumentPart;
+            var res = from bm in mainPart.Document.Body.Descendants<BookmarkStart>()
+                      where bm.Name == BookmarkName
+                      select bm;
+            var bookmark = res.SingleOrDefault();
+            if (bookmark != null)
+            {
+                var parent = bookmark.Parent;   // bookmark's parent element
+
+                //可放置文字
+                // simple paragraph in one declaration
+                //Paragraph newParagraph = new Paragraph(new Run(new Text("Hello, World!")));
+
+                //// build paragraph piece by piece
+                //Text text = new Text("Hello, World!");
+                //Run run = new Run(new RunProperties(new Bold()));
+                //run.Append(text);
+                //Paragraph newParagraph = new Paragraph(run);
+
+                Paragraph tableParagraph = new Paragraph();
+                // insert after bookmark parent
+                parent.InsertAfterSelf(tableParagraph);
+
+                // insert after new paragraph
+                tableParagraph.InsertBeforeSelf(table);
+
+                if (DeleteAfterSetValue)
+                {
+                    bookmark.Remove();
+                }
+            }
+        }
+
+
+
+
+
+
 
 
         #region 定義樣式
