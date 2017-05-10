@@ -590,7 +590,7 @@ namespace ResumeExport.Service
             FileStream fs = null;
 
             //Word 檔案套印後回傳串流
-            byte[] objFile = ExportResumeByDocx_ReplaceText(out result, out msg);
+            byte[] objFile = ExportResumeByDocx_Bookmark(out result, out msg);
 
             //將 Word 串流資訊轉換為實體暫存檔案
             Spire.Doc.Document spiredoc = new Spire.Doc.Document();
