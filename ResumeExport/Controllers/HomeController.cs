@@ -36,7 +36,29 @@ namespace ResumeExport.Controllers
         {
             bool result;
             string msg;
-            byte[] objFile = new SpireDocExportService().ExportResumeByDocx(out result, out msg);
+            byte[] objFile = new SpireDocExportService().ExportResumeByDocx_ReplaceText(out result, out msg);
+
+            if (result)
+            {
+                ////Word (doc)
+                //return File(objFile, "application/msword", "MyReseme.doc");
+                ////PDF
+                //return File(objFile, "application/pdf", "MyReseme.pdf");
+                ////Word (docx)
+                return File(objFile, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "MyResume.docx");
+            }
+            else
+            {
+                return RedirectToAction("Index");
+            }
+        }
+
+
+        public ActionResult SpireDoc_ExportResumeByDocxBookmark()
+        {
+            bool result;
+            string msg;
+            byte[] objFile = new SpireDocExportService().ExportResumeByDocx_Bookmark(out result, out msg);
 
             if (result)
             {
