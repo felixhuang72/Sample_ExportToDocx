@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Web;
+using Microsoft.Office.Interop.Word;
 
 namespace ResumeExport.Service
 {
@@ -86,11 +87,11 @@ namespace ResumeExport.Service
 
                 for (int s = 0; s < document.Sections.Count; s++)
                 {
-                    Section section = document.Sections[s];
+                    Spire.Doc.Section section = document.Sections[s];
                     //套用文章段落樣式
                     for (int p = 0; p < section.Paragraphs.Count; p++)
                     {
-                        Paragraph pgh = section.Paragraphs[p];
+                        Spire.Doc.Documents.Paragraph pgh = section.Paragraphs[p];
                         pgh.ApplyStyle("BasicStyle");
                         pgh.Format.BeforeSpacing = 10;
                     }
@@ -98,7 +99,7 @@ namespace ResumeExport.Service
                     //套用表格樣式
                     for (int t = 0; t < document.Sections[s].Tables.Count; t++)
                     {
-                        Table table = (Table)document.Sections[s].Tables[t];
+                        Spire.Doc.Table table = (Spire.Doc.Table)document.Sections[s].Tables[t];
                         table.PreferredWidth = new PreferredWidth(WidthType.Percentage, 100);
                         table.TableFormat.IsAutoResized = true;
 
@@ -198,7 +199,7 @@ namespace ResumeExport.Service
                 //Replace {$Description1$} with paragraph
                 TextSelection selection = document.FindString("{$Description1$}", false, true);
                 TextRange range = selection.GetAsOneRange();
-                Paragraph paragraph = range.OwnerParagraph;
+                Spire.Doc.Documents.Paragraph paragraph = range.OwnerParagraph;
                 paragraph.ApplyStyle("Basic");
                 paragraph.Replace("{$Description1$}", "", false, false);
                 paragraph.AppendHTML(string.IsNullOrEmpty(model.Description1) ? "" : HttpUtility.HtmlDecode(model.Description1));
@@ -217,8 +218,8 @@ namespace ResumeExport.Service
 
                 if (model.JobHistory.Count > 0)
                 {
-                    Section s = document.AddSection();
-                    Table table = s.AddTable(true);
+                    Spire.Doc.Section s = document.AddSection();
+                    Spire.Doc.Table table = s.AddTable(true);
                     string[] Header = { "序號", "任職公司", "職稱", "開始時間", "結束時間" };
 
                     //Add Cells
@@ -229,7 +230,7 @@ namespace ResumeExport.Service
                     FRow.IsHeader = true;
                     for (int i = 0; i < Header.Length; i++)
                     {
-                        Paragraph p = FRow.Cells[i].AddParagraph();
+                        Spire.Doc.Documents.Paragraph p = FRow.Cells[i].AddParagraph();
                         FRow.Cells[i].CellFormat.VerticalAlignment = VerticalAlignment.Middle;
                         p.Format.HorizontalAlignment = HorizontalAlignment.Center;
 
@@ -251,7 +252,7 @@ namespace ResumeExport.Service
                             DataRow.Cells[c].CellFormat.VerticalAlignment = VerticalAlignment.Middle;
 
                             //Fill Data in Rows
-                            Paragraph p2 = DataRow.Cells[c].AddParagraph();
+                            Spire.Doc.Documents.Paragraph p2 = DataRow.Cells[c].AddParagraph();
                             TextRange TR2 = p2.AppendText(data[c]);
 
                             //Format Cells
@@ -262,7 +263,7 @@ namespace ResumeExport.Service
                     //Replace text with Table
                     TextSelection selectionTable = document.FindString("{$JobHistory$}", true, true);
                     TextRange rangeTable = selectionTable.GetAsOneRange();
-                    Paragraph paragraphTable = rangeTable.OwnerParagraph;
+                    Spire.Doc.Documents.Paragraph paragraphTable = rangeTable.OwnerParagraph;
                     Body body = paragraphTable.OwnerTextBody;
                     int index = body.ChildObjects.IndexOf(paragraphTable);
                     body.ChildObjects.Remove(paragraphTable);
@@ -276,11 +277,11 @@ namespace ResumeExport.Service
                 //套用文章段落樣式
                 for (int s = 0; s < document.Sections.Count; s++)
                 {
-                    Section section = document.Sections[s];
+                    Spire.Doc.Section section = document.Sections[s];
                     //套用文章段落樣式
                     for (int p = 0; p < section.Paragraphs.Count; p++)
                     {
-                        Paragraph pgh = section.Paragraphs[p];
+                        Spire.Doc.Documents.Paragraph pgh = section.Paragraphs[p];
                         pgh.ApplyStyle("Basic");
                         pgh.Format.BeforeSpacing = 12;
                     }
@@ -288,7 +289,7 @@ namespace ResumeExport.Service
                     //套用表格樣式
                     for (int t = 0; t < document.Sections[s].Tables.Count; t++)
                     {
-                        Table table = (Table)document.Sections[s].Tables[t];
+                        Spire.Doc.Table table = (Spire.Doc.Table)document.Sections[s].Tables[t];
                         table.PreferredWidth = new PreferredWidth(WidthType.Percentage, 100);
                         table.TableFormat.IsAutoResized = true;
 
@@ -334,5 +335,89 @@ namespace ResumeExport.Service
             }
         }
 
+
+        /// <summary>
+        /// 透過既有的套印檔建立 Word 文件，並匯出 PDF 文件 (使用 Microsoft.Office.Interop.Word 套件)
+        /// </summary>
+        /// <param name="result">回傳: 執行結果</param>
+        /// <param name="msg">回傳: 訊息</param>
+        /// <returns>串流資訊</returns>
+        public byte[] ExportResume_Word2PDF(out bool result, out string msg)
+        {
+            /****** 程式處理邏輯 *****
+             * 
+             * 1. 取得 docx 串流資訊，將其轉換為實體暫存檔案
+             * 2. 透過 Microsoft.Office.Interop.Word 套件將方才產生的 docx 暫存檔轉換為 PDF 實體檔案
+             * 3. 將 PDF 實體檔案轉換成串流資訊
+             * 4. 回傳前，將產生的暫存檔案 (docx, pdf) 移除
+             * 5. 回傳 PDF 串流資訊，完成
+             * 
+             ************************/
+
+            result = true;
+            msg = "";
+            MemoryStream ms = new MemoryStream();
+            FileStream fs = null;
+
+            //Word 檔案套印後回傳串流
+            byte[] objFile = ExportResumeByDocx(out result, out msg);
+
+            //將 Word 串流資訊轉換為實體暫存檔案
+            Spire.Doc.Document spiredoc = new Spire.Doc.Document();
+            Stream tmpdoc = new MemoryStream(objFile);
+            spiredoc.LoadFromStream(tmpdoc, FileFormat.Docx);
+
+            string tmpDocDir = HttpContext.Current.Server.MapPath("~/TmpDocs");
+            string tmpDocPath = Path.Combine(tmpDocDir, DateTime.Now.ToString("yyyyMMddHHmmss") + ".docx");
+            if (!Directory.Exists(tmpDocDir))
+            {
+                Directory.CreateDirectory(tmpDocDir);
+            }
+            spiredoc.SaveToFile(tmpDocPath, FileFormat.Docx);
+
+
+            //轉換成 PDF
+            string tmpPdfFilePath = Path.Combine(tmpDocDir, DateTime.Now.ToString("yyyyMMddHHmmss") + ".pdf");
+            if (File.Exists(tmpDocPath))
+            {
+                var appWord = new Application();                
+                if (appWord.Documents != null)
+                {
+                    var wordDocument = appWord.Documents.Open(tmpDocPath);                    
+                    if (wordDocument != null)
+                    {
+                        try
+                        {
+                            //產生建立
+                            wordDocument.ExportAsFixedFormat(tmpPdfFilePath, WdExportFormat.wdExportFormatPDF);
+                            fs = new FileStream(tmpPdfFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                            wordDocument.Close();
+                            fs.CopyTo(ms);
+                        }
+                        catch (Exception ex) { result = false; msg = ex.Message; }
+                        finally
+                        {
+                            fs.Dispose();
+                            //刪除產生的暫存 PDF 檔                            
+                            File.Delete(tmpPdfFilePath);
+                        }
+                    }
+                }
+                appWord.Quit();
+
+                //刪除產生的暫存 Word 檔
+                File.Delete(tmpDocPath);
+            }
+
+            //回傳串流資訊
+            if (result)
+            {
+                return ms.ToArray();
+            }
+            else
+            {
+                return null;
+            }
+        }
     }
 }

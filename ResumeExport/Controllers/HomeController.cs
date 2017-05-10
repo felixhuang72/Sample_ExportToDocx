@@ -1,4 +1,5 @@
 ﻿using ResumeExport.Service;
+using System.IO;
 using System.Web.Mvc;
 
 namespace ResumeExport.Controllers
@@ -51,7 +52,29 @@ namespace ResumeExport.Controllers
                 return RedirectToAction("Index");
             }
         }
-        
+
+
+        public ActionResult SpireDoc_ExportResumePdfByDocx()
+        {
+            bool result;
+            string msg;
+            byte[] objFile = new SpireDocExportService().ExportResume_Word2PDF(out result, out msg);
+
+            if (result)
+            {
+                ////Word (doc)
+                //return File(objFile, "application/msword", "MyReseme.doc");
+                ////PDF
+                //return File(objFile, "application/pdf", "MyReseme.pdf");
+                ////Word (docx)
+                return File(objFile, System.Net.Mime.MediaTypeNames.Application.Pdf, "MyResume.pdf");
+            }
+            else
+            {
+                return RedirectToAction("Index");
+            }
+        }
+
         public ActionResult OpenXML_ExportByHtml()
         {
             bool result;
