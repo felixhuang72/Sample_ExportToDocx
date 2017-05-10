@@ -213,6 +213,15 @@ namespace ResumeExport.Service
                 paragraph.Replace("{$Description2$}", "", false, false);
                 paragraph.AppendHTML(string.IsNullOrEmpty(model.Description2) ? "" : HttpUtility.HtmlDecode(model.Description2));
 
+                //Replace {$Img$} with Image                
+                DocPicture pic = new DocPicture(document);
+                pic.LoadImage(Image.FromFile(HttpContext.Current.Server.MapPath("~/App_Data/Penguins.jpg")));
+
+                selection = document.FindString("{$Img$}", false, true);
+                range = selection.GetAsOneRange();                
+                range.OwnerParagraph.ChildObjects.Insert(0, pic);
+                range.OwnerParagraph.ChildObjects.Remove(range);
+                
                 #endregion
 
                 #region 動態新增表格
@@ -396,13 +405,13 @@ namespace ResumeExport.Service
                 //HTML Contents: Desciprion1                
                 Spire.Doc.Section tempSection = document.AddSection();
                 string html = string.IsNullOrEmpty(model.Description1) ? "" : HttpUtility.HtmlDecode(model.Description1);
-                tempSection.AddParagraph().AppendHTML(html);                
+                tempSection.AddParagraph().AppendHTML(html);
                 ParagraphBase replacementFirstItem = tempSection.Paragraphs[0].Items.FirstItem as ParagraphBase;
                 ParagraphBase replacementLastItem = tempSection.Paragraphs[tempSection.Paragraphs.Count - 1].Items.LastItem as ParagraphBase;
                 TextBodySelection selection = new TextBodySelection(replacementFirstItem, replacementLastItem);
                 //將內容各段落套用指定的樣式
-                for (int i=0; i<tempSection.Paragraphs.Count; i++)
-                {   
+                for (int i = 0; i < tempSection.Paragraphs.Count; i++)
+                {
                     tempSection.Paragraphs[i].ApplyStyle("Basic");
                 }
                 TextBodyPart part = new TextBodyPart(selection);
