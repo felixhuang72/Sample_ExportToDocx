@@ -618,10 +618,12 @@ namespace ResumeExport.Service
                     {
                         try
                         {
-                            //產生建立
+                            //將 Word 檔轉存成 PDF 實體檔案
                             wordDocument.ExportAsFixedFormat(tmpPdfFilePath, WdExportFormat.wdExportFormatPDF);
+                            //將轉換後的 PDF 實體檔案串流化
                             fs = new FileStream(tmpPdfFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
                             wordDocument.Close();
+                            //將 FileStream 轉存給 MemoryStream
                             fs.CopyTo(ms);
                         }
                         catch (Exception ex) { result = false; msg = ex.Message; }
