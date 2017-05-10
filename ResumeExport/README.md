@@ -10,12 +10,14 @@
 <h3>使用套件</h3>
 <hr />
 
-使用 [E-ICEBLUE Free Spire.Doc for .NET](https://www.e-iceblue.com/Introduce/free-doc-component.html#.WNI-qUaP8dU)
+使用 [E-ICEBLUE Free Spire.Doc for .NET](https://www.e-iceblue.com/Introduce/free-doc-component.html#.WNI-qUaP8dU)、[OpenXML SDK](https://www.nuget.org/packages/OpenXMLSDK-MOT/) 及 [Microsoft.Office.Interop.Word](https://www.nuget.org/packages/Microsoft.Office.Interop.Word/)
 套件 (免費版) 進行開發<br />
-Nuget 安裝:<br />
-<pre><code>PM> Install-Package FreeSpire.Doc</code></pre>
+Nuget 安裝指令:<br />
+<pre><code>PM> Install-Package FreeSpire.Doc</code>
+<code>PM> Install-Package OpenXMLSDK-MOT</code>
+<code>PM> Install-Package Microsoft.Office.Interop.Word</code></pre>
 
-<br />文件與範例：[使用文件 ](https://www.e-iceblue.com/Tutorials/Spire.Doc/Spire.Doc-Program-Guide.html)
+<br />Spire.Doc 文件與範例：[使用文件 ](https://www.e-iceblue.com/Tutorials/Spire.Doc/Spire.Doc-Program-Guide.html)
 <br />免費版限制：
 
 - 最多 500 個段落 (Paragraph)
