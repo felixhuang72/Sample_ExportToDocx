@@ -589,62 +589,13 @@ namespace ResumeExport.Service
             MemoryStream ms = new MemoryStream();
             FileStream fs = null;
 
-            //Word 檔案套印後回傳串流
-            byte[] objFile = ExportResumeByDocx_Bookmark(out result, out msg);
-
-            //將 Word 串流資訊轉換為實體暫存檔案
-            Spire.Doc.Document spiredoc = new Spire.Doc.Document();
-            Stream tmpdoc = new MemoryStream(objFile);
-            spiredoc.LoadFromStream(tmpdoc, FileFormat.Docx);
-
-            string tmpDocDir = HttpContext.Current.Server.MapPath("~/TmpDocs");
-            string tmpDocPath = Path.Combine(tmpDocDir, DateTime.Now.ToString("yyyyMMddHHmmss") + ".docx");
-            if (!Directory.Exists(tmpDocDir))
-            {
-                Directory.CreateDirectory(tmpDocDir);
-            }
-            spiredoc.SaveToFile(tmpDocPath, FileFormat.Docx);
-
-
-            //轉換成 PDF
-            string tmpPdfFilePath = Path.Combine(tmpDocDir, DateTime.Now.ToString("yyyyMMddHHmmss") + ".pdf");
-            if (File.Exists(tmpDocPath))
-            {
-                var appWord = new Application();
-                if (appWord.Documents != null)
-                {
-                    var wordDocument = appWord.Documents.Open(tmpDocPath);
-                    if (wordDocument != null)
-                    {
-                        try
-                        {
-                            //將 Word 檔轉存成 PDF 實體檔案
-                            wordDocument.ExportAsFixedFormat(tmpPdfFilePath, WdExportFormat.wdExportFormatPDF);
-                            //將轉換後的 PDF 實體檔案串流化
-                            fs = new FileStream(tmpPdfFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                            wordDocument.Close();
-                            //將 FileStream 轉存給 MemoryStream
-                            fs.CopyTo(ms);
-                        }
-                        catch (Exception ex) { result = false; msg = ex.Message; }
-                        finally
-                        {
-                            fs.Dispose();
-                            //刪除產生的暫存 PDF 檔                            
-                            File.Delete(tmpPdfFilePath);
-                        }
-                    }
-                }
-                appWord.Quit();
-
-                //刪除產生的暫存 Word 檔
-                File.Delete(tmpDocPath);
-            }
-
+            //Word 檔案套印後回傳串流            
+            byte[] pdf_streaming = ConvertPDFService.ConvertToPdf_AsposeWords(ExportResumeByDocx_Bookmark(out result, out msg));
+            
             //回傳串流資訊
             if (result)
             {
-                return ms.ToArray();
+                return pdf_streaming;
             }
             else
             {
