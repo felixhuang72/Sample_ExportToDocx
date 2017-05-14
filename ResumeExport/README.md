@@ -27,7 +27,7 @@ Nuget 安裝指令:<br />
 <br />
 
 <h3>使用 Microsoft.Office.Interop.Word 佈屬 IIS 注意事項及流程</h3>
-Written and sponsored by Adrian Huang (2017-5-12)
+<a href="../MarkdownAttach/在IIS上存取使用Office COM元件.docx" alt="原始文件">Written and sponsored by Adrian Huang (2017-5-12)</a>
 <hr />
 <h4>說明</h4>
 在本機使用 Interop Word Excel 套件皆可正常運作，但架設到站台後便無法運作，發生錯誤訊息如:<br />
