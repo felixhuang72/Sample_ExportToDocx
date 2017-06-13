@@ -218,10 +218,10 @@ namespace ResumeExport.Service
                 pic.LoadImage(Image.FromFile(HttpContext.Current.Server.MapPath("~/App_Data/Penguins.jpg")));
 
                 selection = document.FindString("{$Img$}", false, true);
-                range = selection.GetAsOneRange();                
+                range = selection.GetAsOneRange();
                 range.OwnerParagraph.ChildObjects.Insert(0, pic);
                 range.OwnerParagraph.ChildObjects.Remove(range);
-                
+
                 #endregion
 
                 #region 動態新增表格
@@ -388,66 +388,106 @@ namespace ResumeExport.Service
 
                 BookmarksNavigator bookmarkNavigator = new BookmarksNavigator(document);
 
-                bookmarkNavigator.MoveToBookmark("NAME");
-                bookmarkNavigator.ReplaceBookmarkContent(string.IsNullOrEmpty(model.Name) ? "" : model.Name, false);
-                bookmarkNavigator.MoveToBookmark("GENDER");
-                bookmarkNavigator.ReplaceBookmarkContent(string.IsNullOrEmpty(model.Gender) ? "" : model.Gender, false);
-                bookmarkNavigator.MoveToBookmark("EMAIL");
-                bookmarkNavigator.ReplaceBookmarkContent(string.IsNullOrEmpty(model.Email) ? "" : model.Email, false);
-                bookmarkNavigator.MoveToBookmark("ADDRESS");
-                bookmarkNavigator.ReplaceBookmarkContent(string.IsNullOrEmpty(model.Address) ? "" : model.Address, false);
-                bookmarkNavigator.MoveToBookmark("PHONE");
-                bookmarkNavigator.ReplaceBookmarkContent(string.IsNullOrEmpty(model.Phone) ? "" : model.Phone, false);
-                bookmarkNavigator.MoveToBookmark("MOBILE");
-                bookmarkNavigator.ReplaceBookmarkContent(string.IsNullOrEmpty(model.Mobile) ? "" : model.Mobile, false);
-
-
-                //HTML Contents: Desciprion1                
-                Spire.Doc.Section tempSection = document.AddSection();
-                string html = string.IsNullOrEmpty(model.Description1) ? "" : HttpUtility.HtmlDecode(model.Description1);
-                tempSection.AddParagraph().AppendHTML(html);
-                ParagraphBase replacementFirstItem = tempSection.Paragraphs[0].Items.FirstItem as ParagraphBase;
-                ParagraphBase replacementLastItem = tempSection.Paragraphs[tempSection.Paragraphs.Count - 1].Items.LastItem as ParagraphBase;
-                TextBodySelection selection = new TextBodySelection(replacementFirstItem, replacementLastItem);
-                //將內容各段落套用指定的樣式
-                for (int i = 0; i < tempSection.Paragraphs.Count; i++)
+                Spire.Doc.Bookmark bookmark = document.Bookmarks.FindByName("NAME");
+                if (bookmark != null)
                 {
-                    tempSection.Paragraphs[i].ApplyStyle("Basic");
+                    bookmarkNavigator.MoveToBookmark("NAME");
+                    bookmarkNavigator.ReplaceBookmarkContent(string.IsNullOrEmpty(model.Name) ? "" : model.Name, false);
                 }
-                TextBodyPart part = new TextBodyPart(selection);
+                bookmark = document.Bookmarks.FindByName("GENDER");
+                if (bookmark != null)
+                {
+                    bookmarkNavigator.MoveToBookmark("GENDER");
+                    bookmarkNavigator.ReplaceBookmarkContent(string.IsNullOrEmpty(model.Gender) ? "" : model.Gender, false);
+                }
+                bookmark = document.Bookmarks.FindByName("EMAIL");
+                if (bookmark != null)
+                {
+                    bookmarkNavigator.MoveToBookmark("EMAIL");
+                    bookmarkNavigator.ReplaceBookmarkContent(string.IsNullOrEmpty(model.Email) ? "" : model.Email, false);
+                }
+                bookmark = document.Bookmarks.FindByName("ADDRESS");
+                if (bookmark != null)
+                {
+                    bookmarkNavigator.MoveToBookmark("ADDRESS");
+                    bookmarkNavigator.ReplaceBookmarkContent(string.IsNullOrEmpty(model.Address) ? "" : model.Address, false);
+                }
+                bookmark = document.Bookmarks.FindByName("PHONE");
+                if (bookmark != null)
+                {
+                    bookmarkNavigator.MoveToBookmark("PHONE");
+                    bookmarkNavigator.ReplaceBookmarkContent(string.IsNullOrEmpty(model.Phone) ? "" : model.Phone, false);
+                }
+                bookmark = document.Bookmarks.FindByName("MOBILE");
+                if (bookmark != null)
+                {
+                    bookmarkNavigator.MoveToBookmark("MOBILE");
+                    bookmarkNavigator.ReplaceBookmarkContent(string.IsNullOrEmpty(model.Mobile) ? "" : model.Mobile, false);
+                }
 
-                // locate the bookmark
-                bookmarkNavigator.MoveToBookmark("DESCRIPTION1");
-                //replace the content of bookmark
-                bookmarkNavigator.ReplaceBookmarkContent(part);
-                //remove temp section
-                document.Sections.Remove(tempSection);
 
 
-                //HTML Contents: Desciprion2                
-                tempSection = document.AddSection();
-                html = string.IsNullOrEmpty(model.Description2) ? "" : HttpUtility.HtmlDecode(model.Description2);
-                tempSection.AddParagraph().AppendHTML(html);
-                replacementFirstItem = tempSection.Paragraphs[0].Items.FirstItem as ParagraphBase;
-                replacementLastItem = tempSection.Paragraphs[tempSection.Paragraphs.Count - 1].Items.LastItem as ParagraphBase;
-                selection = new TextBodySelection(replacementFirstItem, replacementLastItem);
-                part = new TextBodyPart(selection);
+                Spire.Doc.Section tempSection = document.AddSection();
+                string html;
+                ParagraphBase replacementFirstItem;
+                ParagraphBase replacementLastItem;
+                TextBodySelection selection;
+                TextBodyPart part;
 
-                bookmarkNavigator.MoveToBookmark("DESCRIPTION2");
-                bookmarkNavigator.ReplaceBookmarkContent(part);
-                document.Sections.Remove(tempSection);
+                //HTML Contents: Desciprion1
+                bookmark = document.Bookmarks.FindByName("DESCRIPTION1");
+                if (bookmark != null)
+                {
+                    html = string.IsNullOrEmpty(model.Description1) ? "" : HttpUtility.HtmlDecode(model.Description1);
+                    tempSection.AddParagraph().AppendHTML(html);
+                    replacementFirstItem = tempSection.Paragraphs[0].Items.FirstItem as ParagraphBase;
+                    replacementLastItem = tempSection.Paragraphs[tempSection.Paragraphs.Count - 1].Items.LastItem as ParagraphBase;
+                    selection = new TextBodySelection(replacementFirstItem, replacementLastItem);
+                    //將內容各段落套用指定的樣式
+                    for (int i = 0; i < tempSection.Paragraphs.Count; i++)
+                    {
+                        tempSection.Paragraphs[i].ApplyStyle("Basic");
+                    }
+                    part = new TextBodyPart(selection);
 
+                    // locate the bookmark
+                    bookmarkNavigator.MoveToBookmark("DESCRIPTION1");
+                    //replace the content of bookmark
+                    bookmarkNavigator.ReplaceBookmarkContent(part);
+                    //remove temp section
+                    document.Sections.Remove(tempSection);
+                }
+
+                //HTML Contents: Desciprion2
+                bookmark = document.Bookmarks.FindByName("DESCRIPTION2");
+                if (bookmark != null)
+                {
+                    tempSection = document.AddSection();
+                    html = string.IsNullOrEmpty(model.Description2) ? "" : HttpUtility.HtmlDecode(model.Description2);
+                    tempSection.AddParagraph().AppendHTML(html);
+                    replacementFirstItem = tempSection.Paragraphs[0].Items.FirstItem as ParagraphBase;
+                    replacementLastItem = tempSection.Paragraphs[tempSection.Paragraphs.Count - 1].Items.LastItem as ParagraphBase;
+                    selection = new TextBodySelection(replacementFirstItem, replacementLastItem);
+                    part = new TextBodyPart(selection);
+
+                    bookmarkNavigator.MoveToBookmark("DESCRIPTION2");
+                    bookmarkNavigator.ReplaceBookmarkContent(part);
+                    document.Sections.Remove(tempSection);
+                }
 
                 //圖片
-                bookmarkNavigator.MoveToBookmark("IMG");
-                Spire.Doc.Section section_img = document.AddSection();
-                Spire.Doc.Documents.Paragraph paragraph_img = section_img.AddParagraph();
-                Image img = Image.FromFile(HttpContext.Current.Server.MapPath("~/App_Data/Penguins.jpg"));
-                DocPicture picture = paragraph_img.AppendPicture(img);
+                bookmark = document.Bookmarks.FindByName("IMG");
+                if (bookmark != null)
+                {
+                    bookmarkNavigator.MoveToBookmark("IMG");
+                    Spire.Doc.Section section_img = document.AddSection();
+                    Spire.Doc.Documents.Paragraph paragraph_img = section_img.AddParagraph();
+                    Image img = Image.FromFile(HttpContext.Current.Server.MapPath("~/App_Data/Penguins.jpg"));
+                    DocPicture picture = paragraph_img.AppendPicture(img);
 
-                bookmarkNavigator.InsertParagraph(paragraph_img);
-                document.Sections.Remove(section_img);
-
+                    bookmarkNavigator.InsertParagraph(paragraph_img);
+                    document.Sections.Remove(section_img);
+                }
                 #endregion
 
                 #region 動態新增表格
@@ -591,7 +631,7 @@ namespace ResumeExport.Service
 
             //Word 檔案套印後回傳串流            
             byte[] pdf_streaming = ConvertPDFService.ConvertToPdf_AsposeWords(ExportResumeByDocx_Bookmark(out result, out msg));
-            
+
             //回傳串流資訊
             if (result)
             {
