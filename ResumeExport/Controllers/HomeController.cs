@@ -1,5 +1,5 @@
 ﻿using ResumeExport.Service;
-using System.IO;
+using System;
 using System.Web.Mvc;
 
 namespace ResumeExport.Controllers
@@ -7,7 +7,7 @@ namespace ResumeExport.Controllers
     public class HomeController : Controller
     {
         public ActionResult Index()
-        {
+        {   
             return View();
         }
 
@@ -52,8 +52,7 @@ namespace ResumeExport.Controllers
                 return RedirectToAction("Index");
             }
         }
-
-
+        
         public ActionResult SpireDoc_ExportResumeByDocxBookmark()
         {
             bool result;
@@ -74,8 +73,7 @@ namespace ResumeExport.Controllers
                 return RedirectToAction("Index");
             }
         }
-
-
+        
         public ActionResult SpireDoc_ExportResumePdfByDocx()
         {
             bool result;
@@ -139,9 +137,19 @@ namespace ResumeExport.Controllers
             }
         }
 
-
-
-
+        public ActionResult DocX_ExportImgDocx()
+        {
+            byte[] objFile = DocXService.AddImgDoc("https://github.com/felixhuang72/Sample_ExportToDocx/raw/master/MarkdownAttach/iis_officedom_01.png");
+            if(objFile != null && objFile.Length > 0)
+            {
+                return File(objFile, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", $"docx_test_{DateTime.Now.ToString("yyyyMMddHHmmss")}.docx");
+            }
+            else
+            {
+                return RedirectToAction("Index");
+            }
+        }
+        
 
 
 
