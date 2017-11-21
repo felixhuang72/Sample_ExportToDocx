@@ -16,6 +16,7 @@ Nuget 安裝指令:<br />
 <code>PM> Install-Package OpenXMLSDK-MOT</code>
 <code>PM> Install-Package Microsoft.Office.Interop.Word</code>
 <code>PM> Install-Package Aspose.Words</code></pre>
+<code>PM> Install-Package DocX</code></pre>
 
 <br />Spire.Doc 文件與範例：[使用文件](https://www.e-iceblue.com/Tutorials/Spire.Doc/Spire.Doc-Program-Guide.html)
 <br />免費版限制：
